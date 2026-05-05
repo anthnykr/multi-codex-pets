@@ -7,6 +7,7 @@ final class AppSettings {
     static let selectedPetIDs = "selectedPetIDs"
     static let animationState = "animationState"
     static let scale = "scale"
+    static let walksAround = "walksAround"
   }
 
   private let defaults: UserDefaults
@@ -65,6 +66,15 @@ final class AppSettings {
     }
     set {
       defaults.set(newValue, forKey: Key.scale)
+    }
+  }
+
+  var walksAround: Bool {
+    get {
+      defaults.bool(forKey: Key.walksAround)
+    }
+    set {
+      defaults.set(newValue, forKey: Key.walksAround)
     }
   }
 }

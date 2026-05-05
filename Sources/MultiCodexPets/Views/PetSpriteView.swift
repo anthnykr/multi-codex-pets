@@ -10,13 +10,20 @@ final class PetSpriteView: NSView {
   private var dragStartMouseLocation: NSPoint?
   private var dragStartWindowOrigin: NSPoint?
   private var transientState: AnimationState?
+  private var randomizesNextAnimationStart = false
 
   let pet: PetPackage
+  private(set) var isDragging = false
 
   var animationState: AnimationState {
     didSet {
+      guard animationState != oldValue else { return }
       guard transientState == nil else { return }
-      restartAnimation(for: animationState)
+      restartAnimation(
+        for: animationState,
+        randomizeInitialFrame: randomizesNextAnimationStart
+      )
+      randomizesNextAnimationStart = false
     }
   }
 
@@ -79,6 +86,7 @@ final class PetSpriteView: NSView {
   }
 
   override func mouseDown(with event: NSEvent) {
+    isDragging = true
     dragStartMouseLocation = NSEvent.mouseLocation
     dragStartWindowOrigin = window?.frame.origin
   }
@@ -108,9 +116,22 @@ final class PetSpriteView: NSView {
   }
 
   override func mouseUp(with event: NSEvent) {
+    isDragging = false
     dragStartMouseLocation = nil
     dragStartWindowOrigin = nil
     setTransientState(nil)
+  }
+
+  func setAnimationState(_ state: AnimationState, randomizeInitialFrame: Bool = false) {
+    guard animationState != state else {
+      if randomizeInitialFrame, transientState == nil {
+        restartAnimation(for: state, randomizeInitialFrame: true)
+      }
+      return
+    }
+
+    randomizesNextAnimationStart = randomizeInitialFrame
+    animationState = state
   }
 
   override func draw(_ dirtyRect: NSRect) {
@@ -147,13 +168,13 @@ final class PetSpriteView: NSView {
     restartAnimation(for: state ?? animationState)
   }
 
-  private func restartAnimation(for state: AnimationState) {
+  private func restartAnimation(for state: AnimationState, randomizeInitialFrame: Bool = false) {
     frameTimer?.invalidate()
-    frameIndex = 0
     frames = AnimationTimeline.frames(
       for: state,
       reducedMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     )
+    frameIndex = randomizeInitialFrame && frames.count > 1 ? Int.random(in: frames.indices) : 0
     needsDisplay = true
     scheduleNextFrame()
   }

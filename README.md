@@ -11,6 +11,7 @@ files into this repo.
 - Shows multiple floating, draggable pets at once.
 - Lets you choose exactly which pets are visible from a menu bar checklist.
 - Shows small preview images in the pet checklist.
+- Can slowly roam visible pets around the screen and bounce them off edges.
 - Can show Codex's built-in pets when the Codex app is installed locally.
 - Can load your custom pet packages from `${CODEX_HOME:-$HOME/.codex}/pets`.
 - Supports the Codex pet atlas contract: `1536x1872`, `8 x 9`, `192x208` cells.
@@ -31,7 +32,8 @@ cd multi-codex-pets
 ```
 
 The app appears in the macOS menu bar. Use `Visible Pets` to choose which pets
-are shown, `Animation` to pick an animation state, and `Scale` to resize them.
+are shown, `Walk Around` to let them roam, `Animation` to pick an animation
+state, and `Scale` to resize them.
 
 The run script builds a local app bundle at `dist/MultiCodexPets.app` and starts
 it. `dist/` and Swift build output are ignored by git.

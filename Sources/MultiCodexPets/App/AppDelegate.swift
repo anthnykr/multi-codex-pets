@@ -56,6 +56,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let toggleTitle = petCoordinator.isShowingPets ? "Hide Pets" : "Show Pets"
     menu.addItem(actionItem(title: toggleTitle, action: #selector(togglePets)))
 
+    let walkingItem = actionItem(title: "Walk Around", action: #selector(toggleWalkAround))
+    walkingItem.state = settings.walksAround ? .on : .off
+    menu.addItem(walkingItem)
+
     menu.addItem(actionItem(title: "Refresh Pets", action: #selector(refreshPetsAction)))
 
     let visiblePetsRoot = NSMenuItem(title: "Visible Pets", action: nil, keyEquivalent: "")
@@ -180,6 +184,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       state: settings.animationState,
       scale: settings.scale
     )
+    petCoordinator.setWalksAround(
+      settings.walksAround,
+      baseState: settings.animationState
+    )
     rebuildMenu()
   }
 
@@ -205,6 +213,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc private func refreshPetsAction() {
     refreshPets()
+  }
+
+  @objc private func toggleWalkAround() {
+    settings.walksAround.toggle()
+    petCoordinator.setWalksAround(
+      settings.walksAround,
+      baseState: settings.animationState
+    )
+    rebuildMenu()
   }
 
   @objc private func toggleVisiblePet(_ sender: NSMenuItem) {

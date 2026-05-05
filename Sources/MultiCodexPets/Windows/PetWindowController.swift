@@ -12,6 +12,10 @@ final class PetWindowController: NSWindowController {
     window?.frame
   }
 
+  var isUserDragging: Bool {
+    petView.isDragging
+  }
+
   init(
     pet: PetPackage,
     initialFrame: NSRect,
@@ -55,8 +59,8 @@ final class PetWindowController: NSWindowController {
     window?.orderFrontRegardless()
   }
 
-  func setAnimationState(_ state: AnimationState) {
-    petView.animationState = state
+  func setAnimationState(_ state: AnimationState, randomizeInitialFrame: Bool = false) {
+    petView.setAnimationState(state, randomizeInitialFrame: randomizeInitialFrame)
   }
 
   func setScale(_ scale: Double) {
@@ -67,5 +71,9 @@ final class PetWindowController: NSWindowController {
     let newFrame = NSRect(origin: oldFrame.origin, size: newSize)
     window.setFrame(newFrame, display: true)
     petView.frame = NSRect(origin: .zero, size: newSize)
+  }
+
+  func setFrameOrigin(_ origin: NSPoint) {
+    window?.setFrameOrigin(origin)
   }
 }
