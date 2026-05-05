@@ -4,6 +4,14 @@ import MultiCodexPetsCore
 final class PetWindowController: NSWindowController {
   private let petView: PetSpriteView
 
+  var pet: PetPackage {
+    petView.pet
+  }
+
+  var currentFrame: NSRect? {
+    window?.frame
+  }
+
   init(
     pet: PetPackage,
     initialFrame: NSRect,

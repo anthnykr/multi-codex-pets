@@ -2,12 +2,12 @@ import AppKit
 import MultiCodexPetsCore
 
 final class PetCoordinator {
-  private var windowControllers: [PetWindowController] = []
-  private var currentState: AnimationState = .idle
-  private var currentScale: Double = 1
+  private var windowControllersByPetID: [String: PetWindowController] = [:]
+  private var visiblePetIDs: [String] = []
+  private var rememberedFramesByPetID: [String: NSRect] = [:]
 
   var isShowingPets: Bool {
-    !windowControllers.isEmpty
+    !visiblePetIDs.isEmpty
   }
 
   func showPets(
@@ -15,47 +15,105 @@ final class PetCoordinator {
     state: AnimationState,
     scale: Double
   ) {
-    hidePets()
-
-    guard !packages.isEmpty else { return }
-
-    currentState = state
-    currentScale = scale
-
-    windowControllers = packages.enumerated().map { index, package in
-      let controller = PetWindowController(
-        pet: package,
-        initialFrame: initialFrame(index: index, scale: scale),
-        animationState: state,
-        scale: scale
-      )
-      controller.show()
-      return controller
+    guard !packages.isEmpty else {
+      hidePets()
+      return
     }
+
+    let requestedPetIDs = Set(packages.map(\.id))
+    let removedPetIDs = visiblePetIDs.filter { !requestedPetIDs.contains($0) }
+    for petID in removedPetIDs {
+      closeController(forPetID: petID)
+    }
+
+    var nextVisiblePetIDs: [String] = []
+    for (index, package) in packages.enumerated() {
+      let controller =
+        existingController(for: package)
+        ?? makeController(for: package, index: index, state: state, scale: scale)
+      controller.setAnimationState(state)
+      controller.setScale(scale)
+      controller.show()
+      windowControllersByPetID[package.id] = controller
+      nextVisiblePetIDs.append(package.id)
+    }
+
+    visiblePetIDs = nextVisiblePetIDs
   }
 
   func hidePets() {
-    for controller in windowControllers {
-      controller.close()
+    for petID in visiblePetIDs {
+      closeController(forPetID: petID)
     }
-    windowControllers.removeAll()
+    visiblePetIDs.removeAll()
   }
 
   func setAnimationState(_ state: AnimationState) {
-    currentState = state
-    for controller in windowControllers {
+    for controller in visibleControllers {
       controller.setAnimationState(state)
     }
   }
 
   func setScale(_ scale: Double) {
-    currentScale = scale
-    for controller in windowControllers {
+    for controller in visibleControllers {
       controller.setScale(scale)
     }
   }
 
-  private func initialFrame(index: Int, scale: Double) -> NSRect {
+  private var visibleControllers: [PetWindowController] {
+    visiblePetIDs.compactMap { windowControllersByPetID[$0] }
+  }
+
+  private func existingController(for package: PetPackage) -> PetWindowController? {
+    guard let controller = windowControllersByPetID[package.id] else {
+      return nil
+    }
+
+    guard controller.pet == package else {
+      closeController(forPetID: package.id)
+      return nil
+    }
+
+    return controller
+  }
+
+  private func makeController(
+    for package: PetPackage,
+    index: Int,
+    state: AnimationState,
+    scale: Double
+  ) -> PetWindowController {
+    PetWindowController(
+      pet: package,
+      initialFrame: initialFrame(forPetID: package.id, index: index, scale: scale),
+      animationState: state,
+      scale: scale
+    )
+  }
+
+  private func closeController(forPetID petID: String) {
+    guard let controller = windowControllersByPetID.removeValue(forKey: petID) else {
+      return
+    }
+
+    if let frame = controller.currentFrame {
+      rememberedFramesByPetID[petID] = frame
+    }
+    controller.close()
+  }
+
+  private func initialFrame(forPetID petID: String, index: Int, scale: Double) -> NSRect {
+    if let rememberedFrame = rememberedFramesByPetID[petID] {
+      return NSRect(
+        origin: rememberedFrame.origin,
+        size: PetWindowController.windowSize(scale: scale)
+      )
+    }
+
+    return defaultInitialFrame(index: index, scale: scale)
+  }
+
+  private func defaultInitialFrame(index: Int, scale: Double) -> NSRect {
     let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
     let size = PetWindowController.windowSize(scale: scale)
     let horizontalStep = size.width + 22
